@@ -1,0 +1,25 @@
+# Frontend-only GitHub repo
+# Ignore everything by default, then allow only the Vite frontend app.
+/*
+
+!/.gitignore
+!/new ui design/
+!/new ui design/**
+
+# Never track generated files or local secrets from the frontend app.
+/new ui design/node_modules/
+/new ui design/dist/
+/new ui design/.env
+/new ui design/.env.local
+/new ui design/.env.development
+/new ui design/.env.production
+/new ui design/.env.*.local
+
+# General junk inside the frontend app.
+/new ui design/.DS_Store
+/new ui design/*.log
+/new ui design/npm-debug.log*
+/new ui design/yarn-debug.log*
+/new ui design/yarn-error.log*
+/new ui design/pnpm-debug.log*
+/new ui design/.vercel/
