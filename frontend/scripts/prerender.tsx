@@ -10,6 +10,7 @@ import { BLOG_ARTICLES, BLOG_INDEX_META } from '../src/blog-content';
 
 const distDir = path.resolve(process.cwd(), 'dist');
 const templatePath = path.join(distDir, 'index.html');
+const buildDate = new Date().toISOString().slice(0, 10);
 
 const routes = [
   HOME_PAGE_META.canonicalPath,
@@ -31,12 +32,36 @@ function buildSitemap(): string {
   const urls = routes
     .map((route) => {
       const location = route === '/' ? SITE_URL : `${SITE_URL}${route}`;
-      return `<url><loc>${location}</loc></url>`;
+      const lastModified = getLastModifiedForRoute(route);
+      return `<url><loc>${location}</loc><lastmod>${lastModified}</lastmod></url>`;
     })
     .join('');
 
   return `<?xml version="1.0" encoding="UTF-8"?>` +
     `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`;
+}
+
+function getLastModifiedForRoute(route: string): string {
+  if (route === '/' || route === BLOG_INDEX_META.canonicalPath) {
+    return buildDate;
+  }
+
+  const staticPage = STATIC_PAGES.find((page) => page.meta.canonicalPath === route);
+  if (staticPage) {
+    return buildDate;
+  }
+
+  const blogArticle = BLOG_ARTICLES.find((article) => article.meta.canonicalPath === route);
+  if (blogArticle) {
+    return blogArticle.updatedAt;
+  }
+
+  const courierPage = Object.values(COURIER_PAGE_META).find((page) => page.canonicalPath === route);
+  if (courierPage) {
+    return buildDate;
+  }
+
+  return buildDate;
 }
 
 function buildRouteHead(route: string): string {
