@@ -395,7 +395,7 @@ type TrackingResult = {
 };
 
 const viteEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
-const API_BASE_URL = (viteEnv?.VITE_API_BASE_URL || process.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000').replace(/\/$/, '');
+const API_BASE_URL = '/api';
 
 function parseTrackingIds(input: string): string[] {
   return input
@@ -427,17 +427,173 @@ async function apiRequest<T>(path: string, payload: unknown): Promise<T> {
   return data as T;
 }
 
+const BULK_PROGRESS_CONCURRENCY = 4;
+const BULK_RETRY_DELAY_MS = 2000;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function shouldRetryTrackingFailure(message?: string | null) {
+  if (!message) {
+    return false;
+  }
+
+  const normalized = message.toLowerCase();
+  return [
+    'timed out',
+    'timeout',
+    'connection failed',
+    'request failed',
+    'ssl fallback',
+    'temporarily',
+    'try again',
+    'backend failed',
+    'no usable tracking details',
+  ].some((fragment) => normalized.includes(fragment));
+}
+
+function finalizeTrackingFailure(courierId: string, message?: string | null) {
+  if (courierId === 'tcs' && shouldRetryTrackingFailure(message)) {
+    return 'Result not found';
+  }
+  return message || 'Tracking failed.';
+}
+
+function createRetryingResult(courierName: string, trackingNumber: string): TrackingResult {
+  return {
+    courier: courierName,
+    trackingNumber,
+    success: false,
+    status: 'Searching...',
+    location: null,
+    timestamp: null,
+    events: [],
+    error: null,
+    strategy: 'retrying',
+    shipmentDetails: null,
+    customerMessage: 'We are checking this shipment again.',
+    progressSteps: [],
+  };
+}
+
+async function trackOneWithRetry(courierId: string, trackingNumber: string, retryCount = 1): Promise<TrackingResult> {
+  let lastResult: TrackingResult | null = null;
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= retryCount; attempt += 1) {
+    try {
+      const result = await apiRequest<TrackingResult>('/track', {
+        courier: courierId,
+        trackingNumber,
+        autoDetect: false,
+      });
+
+      if (result.success || !shouldRetryTrackingFailure(result.error) || attempt === retryCount) {
+        if (!result.success && attempt === retryCount) {
+          return {
+            ...result,
+            error: finalizeTrackingFailure(courierId, result.error),
+          };
+        }
+        return result;
+      }
+
+      lastResult = result;
+    } catch (error) {
+      const normalizedError = error instanceof Error ? error : new Error('Tracking failed.');
+      if (attempt === retryCount || !shouldRetryTrackingFailure(normalizedError.message)) {
+        throw new Error(finalizeTrackingFailure(courierId, normalizedError.message));
+      }
+      lastError = normalizedError;
+    }
+
+    await sleep(BULK_RETRY_DELAY_MS);
+  }
+
+  if (lastResult) {
+    return lastResult;
+  }
+
+  throw lastError ?? new Error('Tracking failed.');
+}
+
+async function trackOneOnce(
+  courierId: string,
+  courierName: string,
+  trackingNumber: string,
+  finalizeFailure = false,
+): Promise<TrackingResult> {
+  try {
+    return await apiRequest<TrackingResult>('/track', {
+      courier: courierId,
+      trackingNumber,
+      autoDetect: false,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Tracking failed.';
+    return {
+      courier: courierName,
+      trackingNumber,
+      success: false,
+      status: null,
+      location: null,
+      timestamp: null,
+      events: [],
+      error: finalizeFailure ? finalizeTrackingFailure(courierId, message) : message,
+      strategy: 'error',
+      shipmentDetails: null,
+      customerMessage: null,
+      progressSteps: [],
+    };
+  }
+}
+
 function SummaryDetail({ label, value }: { label: string; value?: string | null }) {
   if (!value) {
     return null;
   }
 
   return (
-    <div className="grid grid-cols-[112px_minmax(0,1fr)] items-start gap-3 border-b border-slate-100 py-3 text-base font-medium">
+    <div className="grid grid-cols-[104px_minmax(0,1fr)] items-start gap-2 border-b border-slate-100 py-3 text-[13px] font-medium md:grid-cols-[110px_minmax(0,1fr)] md:gap-3 md:text-sm">
       <span className="text-slate-400 leading-tight">{label}</span>
-      <span className="text-right font-bold text-slate-900 leading-tight">{value}</span>
+      <span className="text-right font-semibold text-slate-900 leading-tight break-words whitespace-normal">{value}</span>
     </div>
   );
+}
+
+function getLeopardsDerivedOrigin(result: TrackingResult): string | null {
+  for (let index = result.events.length - 1; index >= 0; index -= 1) {
+    const status = (result.events[index]?.status || '').toUpperCase();
+    const originMatch = status.match(/\bORIGIN\s+([A-Z][A-Z\s]+)$/);
+    if (originMatch?.[1]) {
+      return originMatch[1].trim();
+    }
+
+    const routeMatch = status.match(/\bFROM\s+([A-Z][A-Z\s]+?)\s+TO\s+([A-Z][A-Z\s]+?)(?:\s|$)/);
+    if (routeMatch?.[1]) {
+      return routeMatch[1].trim();
+    }
+  }
+
+  return null;
+}
+
+function getLeopardsDerivedDestination(result: TrackingResult): string | null {
+  for (const event of result.events) {
+    const status = (event.status || '').toUpperCase();
+    const routeMatch = status.match(/\bFROM\s+([A-Z][A-Z\s]+?)\s+TO\s+([A-Z][A-Z\s]+?)(?:\s|$)/);
+    if (routeMatch?.[2]) {
+      return routeMatch[2].trim();
+    }
+
+    const assignedMatch = status.match(/\bIN\s+([A-Z][A-Z\s]+)$/);
+    if (assignedMatch?.[1]) {
+      return assignedMatch[1].trim();
+    }
+  }
+
+  return null;
 }
 
 function ProgressStrip({ steps }: { steps?: ProgressStep[] }) {
@@ -446,16 +602,16 @@ function ProgressStrip({ steps }: { steps?: ProgressStep[] }) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3 md:gap-4">
+    <div className="flex flex-wrap items-center gap-2.5 md:gap-3">
       {steps.map((step, index) => (
         <React.Fragment key={`${step.label}-${index}`}>
           <div className="flex items-center gap-2">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black ${step.active ? 'bg-emerald-500 text-white' : 'bg-amber-400 text-slate-900'}`}>
               {index + 1}
             </div>
-            <span className={`text-base font-semibold ${step.active ? 'text-slate-900' : 'text-slate-500'}`}>{step.label}</span>
+            <span className={`text-[13px] md:text-sm font-semibold leading-tight ${step.active ? 'text-slate-900' : 'text-slate-500'}`}>{step.label}</span>
           </div>
-          {index < steps.length - 1 ? <div className="hidden md:block h-px w-8 bg-amber-300" /> : null}
+          {index < steps.length - 1 ? <div className="hidden md:block h-px w-6 bg-amber-300" /> : null}
         </React.Fragment>
       ))}
     </div>
@@ -495,7 +651,7 @@ function DaewooTrackingCard({ result, index }: { result: TrackingResult; index: 
           </div>
         </div>
 
-        <div className="w-full lg:w-[340px] rounded-[1.5rem] border border-slate-100 bg-slate-50/80 p-5">
+        <div className="w-full lg:w-[320px] lg:flex-none rounded-[1.5rem] border border-slate-100 bg-slate-50/80 p-5 md:p-6">
           <SummaryDetail label="Current Status" value={result.status} />
           <SummaryDetail label="Current Location" value={result.location} />
           <SummaryDetail label="Reason" value={result.shipmentDetails?.reason || result.customerMessage} />
@@ -563,10 +719,10 @@ function PakistanPostTrackingCard({ result, index }: { result: TrackingResult; i
           </div>
         </div>
 
-        <div className="w-full lg:w-[340px] rounded-[1.5rem] border border-slate-100 bg-slate-50/80 p-5">
+        <div className="w-full lg:w-[320px] lg:flex-none rounded-[1.5rem] border border-slate-100 bg-slate-50/80 p-5 md:p-6">
+          <SummaryDetail label="Booking Office" value={result.shipmentDetails?.origin} />
           <SummaryDetail label="Delivery Office" value={result.shipmentDetails?.destination || result.location} />
           <SummaryDetail label="Updated" value={result.timestamp} />
-          <SummaryDetail label="Booking Office" value={result.shipmentDetails?.origin} />
         </div>
       </div>
 
@@ -596,6 +752,23 @@ function PakistanPostTrackingCard({ result, index }: { result: TrackingResult; i
 }
 
 function TrackingResultCard({ result, index }: { result: TrackingResult; index: number }) {
+  if (result.strategy === 'retrying') {
+    return (
+      <div className="p-6 bg-white rounded-2xl border border-amber-100 shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-500 font-bold font-display">
+            {index + 1}
+          </div>
+          <div className="min-w-0">
+            <span className="font-mono font-bold text-slate-900 text-lg block break-all">{result.trackingNumber}</span>
+            <span className="text-sm font-bold text-amber-500 uppercase tracking-widest">Searching</span>
+          </div>
+        </div>
+        <p className="mt-4 text-base font-medium text-slate-600">{result.customerMessage || 'We are checking this shipment again.'}</p>
+      </div>
+    );
+  }
+
   if (!result.success) {
     return (
       <div className="p-6 bg-white rounded-2xl border border-rose-100 shadow-sm">
@@ -621,6 +794,18 @@ function TrackingResultCard({ result, index }: { result: TrackingResult; index: 
     return <PakistanPostTrackingCard result={result} index={index} />;
   }
 
+  const normalizedCourier = result.courier.toLowerCase();
+  const derivedLeopardsOrigin =
+    normalizedCourier === 'leopards' ? getLeopardsDerivedOrigin(result) : null;
+  const derivedLeopardsDestination =
+    normalizedCourier === 'leopards' ? getLeopardsDerivedDestination(result) : null;
+  const activeEventIndex =
+    result.events.findIndex(
+      (event) =>
+        event.status === result.status
+        && (!!result.timestamp ? event.timestamp === result.timestamp : true),
+    ) ?? -1;
+
   return (
       <div className="p-6 md:p-8 bg-white rounded-[2rem] border border-slate-100 shadow-sm space-y-8">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
@@ -645,24 +830,42 @@ function TrackingResultCard({ result, index }: { result: TrackingResult; index: 
           <ProgressStrip steps={result.progressSteps} />
         </div>
 
-          <div className="w-full lg:w-[340px] rounded-[1.5rem] border border-slate-100 bg-slate-50/80 p-5">
-            <SummaryDetail
-              label={result.courier.toLowerCase() === 'pakistan post' ? 'Delivery Office' : 'Location'}
-              value={result.courier.toLowerCase() === 'pakistan post' ? result.shipmentDetails?.destination || result.location : result.location}
-            />
-            <SummaryDetail label="Updated" value={result.timestamp} />
-            <SummaryDetail
-              label={result.courier.toLowerCase() === 'pakistan post' ? 'Booking Office' : 'Origin'}
-              value={result.shipmentDetails?.origin}
-            />
-            <SummaryDetail
-              label={result.courier.toLowerCase() === 'pakistan post' ? 'Delivery Office' : 'Destination'}
-              value={result.shipmentDetails?.destination}
-            />
-            <SummaryDetail label="Booking Date" value={result.shipmentDetails?.bookingDate} />
-            <SummaryDetail label="Reference No." value={result.shipmentDetails?.agentReferenceNumber} />
-            <SummaryDetail label="Shipper" value={result.shipmentDetails?.shipper} />
-            <SummaryDetail label="Consignee" value={result.shipmentDetails?.consignee} />
+            <div className="w-full lg:w-[320px] lg:flex-none rounded-[1.5rem] border border-slate-100 bg-slate-50/80 p-5 md:p-6">
+              <SummaryDetail
+                label={
+                  normalizedCourier === 'pakistan post'
+                    ? 'Booking Office'
+                    : 'Origin'
+                }
+                value={result.shipmentDetails?.origin || derivedLeopardsOrigin}
+              />
+              <SummaryDetail
+                label={
+                  normalizedCourier === 'pakistan post'
+                    ? 'Delivery Office'
+                    : 'Destination'
+                }
+                value={
+                  result.shipmentDetails?.destination
+                  || derivedLeopardsDestination
+                  || (normalizedCourier === 'tcs' ? undefined : result.location)
+                }
+              />
+              <SummaryDetail label="Booking Date" value={result.shipmentDetails?.bookingDate} />
+              <SummaryDetail label="Updated" value={result.timestamp} />
+              {normalizedCourier !== 'tcs' ? (
+                <SummaryDetail
+                  label={normalizedCourier === 'pakistan post' ? 'Delivery Office' : 'Location'}
+                  value={
+                    normalizedCourier === 'pakistan post'
+                      ? result.shipmentDetails?.destination || result.location
+                      : result.location
+                  }
+                />
+              ) : null}
+              <SummaryDetail label="Reference No." value={result.shipmentDetails?.agentReferenceNumber} />
+              <SummaryDetail label="Shipper" value={result.shipmentDetails?.shipper} />
+              <SummaryDetail label="Consignee" value={result.shipmentDetails?.consignee} />
             <SummaryDetail label="Signed For By" value={result.shipmentDetails?.signedForBy} />
             <SummaryDetail label="Pieces" value={result.shipmentDetails?.pieces} />
           </div>
@@ -679,7 +882,7 @@ function TrackingResultCard({ result, index }: { result: TrackingResult; index: 
                   {event.location ? <div className="text-sm text-slate-400 mt-1">{event.location}</div> : null}
                 </div>
                 <div className="flex justify-center">
-                  <div className={`w-6 h-6 rounded-full border ${eventIndex === 0 ? 'bg-amber-400 border-amber-400' : 'bg-white border-amber-400'}`} />
+                  <div className={`w-6 h-6 rounded-full border ${eventIndex === (activeEventIndex >= 0 ? activeEventIndex : 0) ? 'bg-amber-400 border-amber-400' : 'bg-white border-amber-400'}`} />
                 </div>
                 <div>
                   <div className="font-semibold text-slate-900">{event.status}</div>
@@ -702,6 +905,7 @@ const TrackingPage = () => {
   const [results, setResults] = React.useState<TrackingResult[]>([]);
   const [error, setError] = React.useState<string | null>(null);
   const [openFaqIdx, setOpenFaqIdx] = React.useState<number | null>(null);
+  const trackingRunRef = React.useRef(0);
 
   React.useEffect(() => {
     if (!courierSlug) {
@@ -733,13 +937,17 @@ const TrackingPage = () => {
   const relatedArticle = BLOG_ARTICLE_BY_COURIER_ID[courier.id];
 
   const clearTracking = () => {
+    trackingRunRef.current += 1;
     setTrackingIds('');
     setResults([]);
     setError(null);
+    setIsTracking(false);
   };
 
   const handleTrack = async (e: React.FormEvent) => {
     e.preventDefault();
+    trackingRunRef.current += 1;
+    const activeRunId = trackingRunRef.current;
     setError(null);
     setResults([]);
 
@@ -753,29 +961,79 @@ const TrackingPage = () => {
       return;
     }
     
-    setIsTracking(true);
-    try {
-      if (ids.length === 1) {
-        const result = await apiRequest<TrackingResult>('/track', {
-          courier: courier.id,
-          trackingNumber: ids[0],
-          autoDetect: false,
-        });
-        setResults([result]);
-      } else {
-        const bulkResults = await apiRequest<TrackingResult[]>('/bulk-track', {
-          courier: courier.id,
-          trackingNumbers: ids,
-          autoDetect: false,
-        });
-        setResults(bulkResults);
+      setIsTracking(true);
+      try {
+        if (ids.length === 1) {
+          const result = await trackOneWithRetry(courier.id, ids[0], 1);
+          if (trackingRunRef.current === activeRunId) {
+            setResults([result]);
+          }
+        } else {
+          const completed = new Map<string, TrackingResult>();
+          const retryQueue: string[] = [];
+          let cursor = 0;
+
+          const publishResults = () => {
+            setResults(ids.map((id) => completed.get(id)).filter((item): item is TrackingResult => Boolean(item)));
+          };
+
+          const runNext = async () => {
+            while (cursor < ids.length && trackingRunRef.current === activeRunId) {
+              const trackingNumber = ids[cursor];
+              cursor += 1;
+
+              const result = await trackOneOnce(courier.id, courier.name, trackingNumber, false);
+
+              if (!result.success && shouldRetryTrackingFailure(result.error)) {
+                completed.set(trackingNumber, createRetryingResult(courier.name, trackingNumber));
+                retryQueue.push(trackingNumber);
+              } else {
+                completed.set(trackingNumber, result);
+              }
+              if (trackingRunRef.current !== activeRunId) {
+                return;
+              }
+
+              publishResults();
+            }
+          };
+
+          await Promise.all(
+            Array.from({ length: Math.min(BULK_PROGRESS_CONCURRENCY, ids.length) }, () => runNext())
+          );
+
+          if (retryQueue.length > 0 && trackingRunRef.current === activeRunId) {
+            await sleep(BULK_RETRY_DELAY_MS);
+            let retryCursor = 0;
+
+            const runRetry = async () => {
+              while (retryCursor < retryQueue.length && trackingRunRef.current === activeRunId) {
+                const trackingNumber = retryQueue[retryCursor];
+                retryCursor += 1;
+                const retryResult = await trackOneOnce(courier.id, courier.name, trackingNumber, true);
+                completed.set(trackingNumber, retryResult);
+                if (trackingRunRef.current !== activeRunId) {
+                  return;
+                }
+                publishResults();
+              }
+            };
+
+            await Promise.all(
+              Array.from({ length: Math.min(BULK_PROGRESS_CONCURRENCY, retryQueue.length) }, () => runRetry())
+            );
+          }
+        }
+      } catch (submissionError) {
+        if (trackingRunRef.current === activeRunId) {
+          setError(submissionError instanceof Error ? submissionError.message : 'Tracking failed.');
+        }
+      } finally {
+        if (trackingRunRef.current === activeRunId) {
+          setIsTracking(false);
+        }
       }
-    } catch (submissionError) {
-      setError(submissionError instanceof Error ? submissionError.message : 'Tracking failed.');
-    } finally {
-      setIsTracking(false);
-    }
-  };
+    };
 
   return (
       <motion.div 

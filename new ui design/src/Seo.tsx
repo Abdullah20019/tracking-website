@@ -1,6 +1,10 @@
 import React from 'react';
 import { FaqItem, PageMeta, SITE_URL } from './seo-content';
 
+const viteEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
+const GOOGLE_SITE_VERIFICATION = viteEnv?.VITE_GOOGLE_SITE_VERIFICATION || process.env.VITE_GOOGLE_SITE_VERIFICATION || '';
+const GA_MEASUREMENT_ID = viteEnv?.VITE_GA_MEASUREMENT_ID || process.env.VITE_GA_MEASUREMENT_ID || '';
+
 type SeoProps = {
   meta: PageMeta;
   pageName: string;
@@ -33,11 +37,6 @@ function buildSchemas(pageName: string, canonicalUrl: string, faqs: FaqItem[]) {
       '@type': 'WebSite',
       name: 'PakTrack',
       url: SITE_URL,
-      potentialAction: {
-        '@type': 'SearchAction',
-        target: `${SITE_URL}/?q={search_term_string}`,
-        'query-input': 'required name=search_term_string',
-      },
     },
     {
       '@context': 'https://schema.org',
@@ -125,6 +124,15 @@ export function buildHeadMarkup(meta: PageMeta, pageName: string, faqs: FaqItem[
     `<meta name="twitter:title" content="${escapeHtml(meta.ogTitle)}">`,
     `<meta name="twitter:description" content="${escapeHtml(meta.ogDescription)}">`,
     `<meta name="twitter:image" content="${escapeHtml(`${SITE_URL}/websitelogo.png`)}">`,
+    ...(GOOGLE_SITE_VERIFICATION
+      ? [`<meta name="google-site-verification" content="${escapeHtml(GOOGLE_SITE_VERIFICATION)}">`]
+      : []),
+    ...(GA_MEASUREMENT_ID
+      ? [
+          `<script async src="https://www.googletagmanager.com/gtag/js?id=${escapeHtml(GA_MEASUREMENT_ID)}"></script>`,
+          `<script>window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '${escapeHtml(GA_MEASUREMENT_ID)}', { page_path: window.location.pathname });</script>`,
+        ]
+      : []),
     ...schemas.map(
       (schema, index) =>
         `<script type="application/ld+json" data-seo-schema="${index}">${JSON.stringify(schema).replace(/</g, '\\u003c')}</script>`,
@@ -166,6 +174,12 @@ export function Seo({ meta, pageName, faqs = [], extraSchemas = [] }: SeoProps) 
     upsertMeta('meta[name="description"]', { name: 'description', content: meta.description });
     upsertMeta('meta[name="keywords"]', { name: 'keywords', content: meta.keywords.join(', ') });
     upsertMeta('meta[name="robots"]', { name: 'robots', content: 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1' });
+    if (GOOGLE_SITE_VERIFICATION) {
+      upsertMeta('meta[name="google-site-verification"]', {
+        name: 'google-site-verification',
+        content: GOOGLE_SITE_VERIFICATION,
+      });
+    }
     upsertMeta('meta[property="og:type"]', { property: 'og:type', content: 'website' });
     upsertMeta('meta[property="og:site_name"]', { property: 'og:site_name', content: 'PakTrack' });
     upsertMeta('meta[property="og:locale"]', { property: 'og:locale', content: 'en_PK' });

@@ -42,8 +42,14 @@ type CourierSeoSeed = {
 };
 
 const viteEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
+const rawSiteUrl = viteEnv?.VITE_SITE_URL || process.env.VITE_SITE_URL;
+const isProductionBuild = Boolean(viteEnv?.PROD || process.env.VERCEL || process.env.CI);
 
-export const SITE_URL = (viteEnv?.VITE_SITE_URL || process.env.VITE_SITE_URL || 'https://www.paktrack.pk').replace(/\/$/, '');
+if (!rawSiteUrl && isProductionBuild) {
+  throw new Error('VITE_SITE_URL is required for production builds.');
+}
+
+export const SITE_URL = (rawSiteUrl || 'http://localhost:3000').replace(/\/$/, '');
 
 export const HOME_PAGE_META: PageMeta = {
   title: 'Courier Tracking Pakistan | Track Parcels, Pakistan Post, Leopards, M&P and More',
