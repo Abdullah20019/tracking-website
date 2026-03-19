@@ -3,23 +3,23 @@
 /*
 
 !/.gitignore
-!/new ui design/
-!/new ui design/**
+!/frontend/
+!/frontend/**
 
 # Never track generated files or local secrets from the frontend app.
-/new ui design/node_modules/
-/new ui design/dist/
-/new ui design/.env
-/new ui design/.env.local
-/new ui design/.env.development
-/new ui design/.env.production
-/new ui design/.env.*.local
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.env
+/frontend/.env.local
+/frontend/.env.development
+/frontend/.env.production
+/frontend/.env.*.local
 
 # General junk inside the frontend app.
-/new ui design/.DS_Store
-/new ui design/*.log
-/new ui design/npm-debug.log*
-/new ui design/yarn-debug.log*
-/new ui design/yarn-error.log*
-/new ui design/pnpm-debug.log*
-/new ui design/.vercel/
+/frontend/.DS_Store
+/frontend/*.log
+/frontend/npm-debug.log*
+/frontend/yarn-debug.log*
+/frontend/yarn-error.log*
+/frontend/pnpm-debug.log*
+/frontend/.vercel/
