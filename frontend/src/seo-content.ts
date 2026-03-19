@@ -52,9 +52,9 @@ if (!rawSiteUrl && isProductionBuild) {
 export const SITE_URL = (rawSiteUrl || 'http://localhost:3000').replace(/\/$/, '');
 
 export const HOME_PAGE_META: PageMeta = {
-  title: 'Courier Tracking Pakistan | Track Parcels, Pakistan Post, Leopards, M&P and More',
+  title: 'Courier Tracking Pakistan | Bulk Track Parcels, Pakistan Post, Leopards, M&P and More',
   description:
-    'Track parcels across Pakistan from one place with dedicated pages for Pakistan Post, Leopards, M&P, Daewoo, TCS, PostEx, Trax, and BlueEx, plus practical courier guides and bulk lookup support.',
+    'Bulk track parcels across Pakistan from one place with dedicated pages for Pakistan Post, Leopards, M&P, Daewoo, TCS, PostEx, Trax, and BlueEx, plus practical courier guides and bulk lookup support.',
   canonicalPath: '/',
   ogTitle: 'PakTrack | Courier Tracking Pakistan and Parcel Tracking Guides',
   ogDescription:
