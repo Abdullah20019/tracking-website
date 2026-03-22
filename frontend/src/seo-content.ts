@@ -127,6 +127,22 @@ export const HOME_LONG_FORM: LongFormSection[] = [
       'For search engines, this creates a healthier signal. A homepage that introduces the platform honestly, links into strong courier pages, and explains the services in a natural way is far more durable than a page stuffed with repeated phrases. That is the direction this homepage follows as part of the broader SEO work across the site.',
     ],
   },
+  {
+    heading: 'How bulk tracking helps store owners, support teams, and daily users',
+    paragraphs: [
+      'Bulk tracking is one of the most practical reasons people use a website like PakTrack instead of visiting each courier site one by one. A small online store may need to check ten TCS parcels in one sitting, then a few Leopards COD shipments, and perhaps one Pakistan Post item that a customer is asking about. Doing that manually across several courier websites wastes time and makes it harder to compare the latest updates side by side.',
+      'That is why the homepage should explain bulk tracking clearly and honestly. It is not only a convenience feature for large businesses. It is useful for ordinary support work, family shipment checking, and small team operations where someone needs a quick status snapshot without opening tabs all afternoon. Good homepage content should make that use case obvious because it explains why this site exists in the first place.',
+      'The phrase courier tracking Pakistan often brings in users with mixed needs, not a single narrow question. Some want one parcel. Others want to clear a backlog of customer shipment checks in one go. A homepage that explains this workflow naturally gives the site more real utility and stronger topical depth than a purely decorative landing page.',
+    ],
+  },
+  {
+    heading: 'What makes a courier tracking page genuinely helpful',
+    paragraphs: [
+      'A helpful courier page does more than show a green or red status. It should explain what kind of service the courier usually provides, what the common movement pattern looks like, how the number should be used, and what to do if the result seems incomplete. That is why PakTrack has separate pages for Pakistan Post tracking, leopard tracking, m&p tracking, daewoo tracking, TCS, PostEx, Trax, and BlueEx instead of forcing all of them into one generic explanation.',
+      'For example, Pakistan Post users often need office-level clarity, not just a label like in transit. Leopards buyers often care about COD and delivery attempts. M&P users may focus on route and consignee detail. Daewoo users often benefit more from a clean shipment summary than from a busy timeline. When the homepage introduces those differences clearly, visitors are more likely to trust the site and move into the right page with the right expectations.',
+      'That is also better for search quality. Search engines are increasingly good at telling when a page actually helps users versus when it only repeats keywords. A homepage that introduces the supported services, explains the reasons behind the site structure, and points to more detailed guides creates a stronger foundation for every courier page under it.',
+    ],
+  },
 ];
 
 export const HOME_SCHEMA_FAQS: FaqItem[] = [

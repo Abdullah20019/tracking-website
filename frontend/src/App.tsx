@@ -349,6 +349,105 @@ const COURIER_GUIDES: Record<string, { title: string, content: string, tips: str
   }
 };
 
+const PRACTICAL_COURIER_GUIDES: Record<string, { title: string, content: string, tips: string[], faqs: { q: string, a: string }[] }> = {
+  tcs: {
+    title: "How to Use TCS Tracking Without Guesswork",
+    content: "TCS is one of the most widely used courier services in Pakistan, so many visitors arrive here after receiving a seller message, a booking receipt, or an update from a support team. The most useful way to use TCS tracking is to confirm the consignment number first, then read the latest status together with the event right before it. If the parcel has moved from one facility to another and then toward the destination city, it is usually progressing normally. If the result looks quiet, limited, or slower than expected, that does not automatically mean something is wrong. Some TCS shipments show richer public detail than others, and this page is here to help you interpret what the system is actually telling you in plain language.",
+    tips: ["Use the actual consignment number, not a store order ID or invoice number.", "Read the latest event with the previous event so the movement story makes sense.", "Use bulk tracking when you need to review several TCS parcels in one session."],
+    faqs: [
+      { q: "How do I find my TCS tracking number?", a: "Use the consignment number printed on the TCS receipt or shared by the sender in the shipment message." },
+      { q: "What does in transit usually mean in TCS tracking?", a: "It usually means the parcel is moving between facilities or traveling toward the destination side." },
+      { q: "Why does a TCS result sometimes show limited detail?", a: "Some TCS results expose a short public summary instead of a long timeline, which can still be normal for that shipment." },
+      { q: "Can I bulk track TCS shipments on this page?", a: "Yes. You can paste multiple TCS IDs together and review them in one run." },
+      { q: "What should I do if a TCS result still feels unclear?", a: "First confirm the number, then compare the latest event with the previous one before deciding whether the shipment is delayed." }
+    ]
+  },
+  leopards: {
+    title: "A Practical Leopards Tracking Guide for Buyers and Sellers",
+    content: "Leopards Courier is heavily used for domestic parcel delivery and e-commerce orders, which is why people often search leopard tracking right after a store update arrives. The most useful way to read a Leopards result is to follow the movement sequence instead of focusing on one isolated line. If the parcel moved from pickup to dispatch and then into local assignment, that usually shows normal progress. If return-related movement begins, the events around that line matter a lot. This page is written to help both buyers and sellers understand those updates in a practical way, especially for COD orders where local delivery attempts and return movement can change the next step quickly.",
+    tips: ["Use the actual courier tracking number from the booking slip, not a shop reference.", "Check whether the parcel is moving toward local delivery or toward return before assuming a problem.", "Bulk tracking is useful when you need to compare several Leopards parcels together."],
+    faqs: [
+      { q: "How do I use leopard tracking correctly?", a: "Enter the Leopards shipment number exactly as shown on the booking slip or seller message, then review the latest event with the one before it." },
+      { q: "What does assigned to courier usually mean?", a: "It usually means the parcel is entering the local delivery side and moving toward a rider attempt." },
+      { q: "Why do return to sender messages appear on Leopards parcels?", a: "They usually appear after an address issue, failed attempt, refusal, or another delivery-side problem. The earlier events help explain why." },
+      { q: "Can this page help sellers track multiple Leopards shipments?", a: "Yes. Bulk tracking is useful when you need to review several customer parcels in one session." },
+      { q: "What if a Leopards parcel looks stuck?", a: "Check whether there is still local movement or branch activity before assuming it is lost. Many deliveries pause briefly between scans." }
+    ]
+  },
+  pakpost: {
+    title: "How to Read Pakistan Post Tracking More Clearly",
+    content: "Pakistan Post results make more sense when you read them like postal movement rather than rider movement. Instead of asking only whether the parcel is out for delivery, it helps to check the booking office, delivery office, and the latest office-to-office update first. That is especially important for searches like pakistan post tracking, pak post tracking, ums tracking, and gpo tracking, where office names often explain the real progress better than a generic courier label. This page is written to help users understand those office-based updates in plain language, which is often the missing step when a postal result looks confusing.",
+    tips: ["Start with booking office and delivery office before deciding whether the item is delayed.", "Use the postal article number exactly as shown on the receipt, especially for UMS and registered items.", "Office-to-office movement is normal in postal tracking and does not automatically mean the item is stuck."],
+    faqs: [
+      { q: "How do I use Pakistan Post tracking for UMS items?", a: "Enter the postal tracking number exactly as printed on the receipt, then read the booking office and delivery office before the event list." },
+      { q: "What does booking office mean in Pakistan Post tracking?", a: "It shows the office where the article was accepted into the postal system." },
+      { q: "Why does the result show so many offices?", a: "Pakistan Post often records movement through booking offices, district mail offices, and delivery offices rather than retail courier hubs." },
+      { q: "Can I use this page for gpo tracking and pak post tracking searches?", a: "Yes. The guide is written to support common Pakistan Post searches, including UMS, GPO, and general postal tracking." },
+      { q: "What if the office movement looks slow?", a: "Postal systems do not always update like private courier apps. A short gap between office scans can still be normal." }
+    ]
+  },
+  postex: {
+    title: "How to Use PostEx Tracking for Orders and COD Shipments",
+    content: "PostEx is strongly linked to e-commerce delivery, merchant dispatch, and COD workflows, so users usually arrive here with an active order question rather than a casual search. A buyer wants to know whether the parcel is on the way, while a seller wants to know whether the order is still progressing or getting close to delivery. This page is written around that real use case. It helps users confirm that they are using the courier shipment number rather than a store order reference, and it explains how to read the result as part of a delivery workflow instead of treating each status like a mystery.",
+    tips: ["Always check that you are using the courier shipment number, not a store invoice or order code.", "If you handle online orders, bulk tracking is the easiest way to review multiple PostEx shipments together.", "Destination-side movement usually matters more than the oldest booking event when you are checking a live order."],
+    faqs: [
+      { q: "How should I track a PostEx order?", a: "Use the shipment number shared in the courier message or seller update, then review the latest movement first." },
+      { q: "Why do PostEx buyers sometimes use the wrong number?", a: "Because store order IDs and courier shipment IDs often look similar but are not the same thing." },
+      { q: "What kind of shipments are commonly tracked on PostEx?", a: "PostEx is commonly used for e-commerce orders, COD deliveries, and merchant dispatch operations." },
+      { q: "Can this page help merchants check several PostEx orders?", a: "Yes. Bulk tracking is useful for support teams and online sellers reviewing several parcels together." },
+      { q: "What if a PostEx result looks too early or too quiet?", a: "Recently booked shipments can take time to show a full public movement history, so the first visible result may still be limited." }
+    ]
+  },
+  mp: {
+    title: "How to Read M&P Tracking as a Real Shipment Guide",
+    content: "M&P tracking is often used in a slightly more formal business context than a typical online shopping courier page. Many users care about the route, shipment identity, booking date, and consignee details as much as the final status. That is why this page focuses on a practical reading order: confirm the airway bill number, check the route details, then read the latest status in context. For business users, distribution teams, and anyone receiving a document or commercial parcel, that method gives a clearer answer than jumping straight to one event line.",
+    tips: ["Start with the airway bill or shipment number, not an internal business reference.", "Check origin and destination first so you confirm the correct parcel before reading the latest status.", "For operations work, bulk tracking is the easiest way to review several M&P shipments in one pass."],
+    faqs: [
+      { q: "How do I track M&P shipments properly?", a: "Use the airway bill or shipment number, then review the route details and latest movement together." },
+      { q: "Why does M&P tracking feel more detail-heavy than some courier pages?", a: "Because M&P results often include route, shipper, consignee, and booking information that business users rely on." },
+      { q: "Can M&P tracking help with multiple shipments at once?", a: "Yes. Bulk tracking works well for support, dispatch, and office teams handling several parcels." },
+      { q: "What should I do if an M&P result looks unclear?", a: "First confirm the shipment number and route details. Many M&P results become much easier to understand once you know you are viewing the correct parcel." },
+      { q: "Who usually uses M&P tracking?", a: "It is often used for business parcels, distribution movement, office deliveries, and commercial shipments." }
+    ]
+  },
+  daewoo: {
+    title: "Daewoo Tracking Guide Focused on Summary and Booking Details",
+    content: "Daewoo FastEx works best when the tracking page emphasizes the shipment summary rather than a crowded event list. Many users care most about the route, delivery type, receiver details, and whether the parcel has been delivered or is still moving toward the destination branch. That is why this page is designed to highlight the booking details first. For cargo and intercity shipments, that summary often answers the real question faster than a long sequence of operational scans would.",
+    tips: ["Check the route and delivery type before assuming the shipment is delayed.", "For terminal pickup, confirm receiver details and identity requirements before traveling.", "Use the exact consignment number from the cargo receipt so the summary matches the right booking."],
+    faqs: [
+      { q: "How do I track Daewoo FastEx cargo?", a: "Use the consignment number from the Daewoo receipt and start with the summary fields on the result page." },
+      { q: "Why does this Daewoo page focus on summary details?", a: "Because route, delivery type, and receiver confirmation are often more useful than a cluttered timeline for FastEx shipments." },
+      { q: "What kind of shipments do people usually track on Daewoo?", a: "Users commonly check intercity cargo, branch-linked bookings, and heavier parcels that move through the FastEx network." },
+      { q: "What should I verify first on a Daewoo result?", a: "Check the route, destination, and current status so you know the booking summary matches the correct shipment." },
+      { q: "Can Daewoo results still be useful without a long timeline?", a: "Yes. For many FastEx bookings, the summary information is the most practical part of the tracking result." }
+    ]
+  },
+  trax: {
+    title: "Trax Tracking Guide for Orders, Merchants, and Last-Mile Updates",
+    content: "Trax is usually part of an e-commerce workflow, so the person searching this page often wants a quick answer about an active order. Buyers want to know whether the parcel is still moving, while merchants want to know whether the order is progressing normally or drifting toward a delivery problem. This page is written with that real use case in mind. It explains how to confirm the shipment number, read the latest stage, and make sense of pickup, transit, and destination-side movement without turning the result into guesswork.",
+    tips: ["Use the Trax shipment number from the courier message, not a merchant order reference.", "For store teams, bulk tracking is ideal when several Trax orders need review at once.", "Read the latest update as part of the full movement flow rather than as one isolated event."],
+    faqs: [
+      { q: "How do I track a Trax parcel correctly?", a: "Enter the Trax shipment number exactly as shown in the courier message or merchant update, then review the latest movement stage first." },
+      { q: "Who usually uses Trax tracking?", a: "Trax is commonly used by online buyers, merchants, and support teams working with e-commerce deliveries." },
+      { q: "Why might a Trax result fail even if the order exists?", a: "A merchant order code is often different from the actual courier shipment number, so the wrong reference can make the search look broken." },
+      { q: "Can this page help with bulk Trax checks?", a: "Yes. Bulk tracking is useful for seller teams, operations staff, and anyone reviewing multiple orders together." },
+      { q: "What should I do if the latest Trax update feels confusing?", a: "Read it in sequence with the previous event so you can tell whether the shipment is moving through pickup, transit, or destination handling." }
+    ]
+  },
+  blueex: {
+    title: "BlueEx Tracking Guide for COD and Last-Mile Deliveries",
+    content: "BlueEx is often searched by online buyers, resellers, and support teams who need a fast answer about a moving parcel. Most of the time the real question is simple: is the parcel still moving normally, has it reached the destination side, or has it already been delivered? This page is designed to answer that question with cleaner result formatting and more practical guidance. Instead of forcing the user to decode courier wording alone, it explains how to read BlueEx movement in a way that makes sense for real e-commerce deliveries in Pakistan.",
+    tips: ["Confirm the tracking number before searching because store references and courier IDs are not always the same.", "Read the newest BlueEx event first, then compare it with the earlier movement for context.", "Bulk tracking is useful when you need to review several BlueEx parcels in one session."],
+    faqs: [
+      { q: "How do I track BlueEx shipments on this page?", a: "Enter the BlueEx tracking number from the courier message or booking reference and check the latest event first." },
+      { q: "What kind of deliveries are usually tracked on BlueEx?", a: "BlueEx is commonly used for e-commerce, COD, and domestic parcel movement across Pakistan." },
+      { q: "Why do some BlueEx results show a shorter history than other couriers?", a: "Some courier systems expose less public detail than others, so a shorter history does not automatically mean something is wrong." },
+      { q: "Can I bulk track BlueEx parcels here?", a: "Yes. Bulk tracking helps when you need to check several BlueEx IDs together for support or operations work." },
+      { q: "What if a BlueEx result looks too minimal?", a: "Focus on the latest confirmed status and destination-side movement first. That usually gives the clearest answer about the parcel." }
+    ]
+  }
+};
+
 type TrackingEvent = {
   status: string;
   location: string | null;
@@ -931,7 +1030,7 @@ const TrackingPage = () => {
     );
   }
 
-  const guide = COURIER_GUIDES[courier.id];
+  const guide = PRACTICAL_COURIER_GUIDES[courier.id] || COURIER_GUIDES[courier.id];
   const pageMeta = COURIER_PAGE_META[courier.id];
   const longFormSections = COURIER_LONG_FORM[courier.id] || [];
   const relatedArticle = BLOG_ARTICLE_BY_COURIER_ID[courier.id];
