@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { Seo } from './Seo';
 import { COURIER_LONG_FORM, COURIER_PAGE_META, HOME_LONG_FORM, HOME_PAGE_META, STATIC_PAGE_BY_SLUG, STATIC_PAGES } from './seo-content';
+import { COURIER_DECISION_PATHS, COURIER_DEEP_DIVE, COURIER_EXPANDED_GUIDANCE, COURIER_FINAL_NOTES } from './courier-deep-dive';
 import { BLOG_ARTICLES, BLOG_ARTICLE_BY_COURIER_ID, BLOG_ARTICLE_BY_SLUG, BLOG_INDEX_META, BLOG_INTRO_SECTIONS, BLOG_SUPPLEMENTAL_SECTIONS } from './blog-content';
 
 const COURIERS = [
@@ -1032,7 +1033,13 @@ const TrackingPage = () => {
 
   const guide = PRACTICAL_COURIER_GUIDES[courier.id] || COURIER_GUIDES[courier.id];
   const pageMeta = COURIER_PAGE_META[courier.id];
-  const longFormSections = COURIER_LONG_FORM[courier.id] || [];
+  const longFormSections = [
+    ...(COURIER_LONG_FORM[courier.id] || []),
+    ...(COURIER_DEEP_DIVE[courier.id] || []),
+    ...(COURIER_EXPANDED_GUIDANCE[courier.id] || []),
+    ...(COURIER_DECISION_PATHS[courier.id] || []),
+    ...(COURIER_FINAL_NOTES[courier.id] || []),
+  ];
   const relatedArticle = BLOG_ARTICLE_BY_COURIER_ID[courier.id];
 
   const clearTracking = () => {
